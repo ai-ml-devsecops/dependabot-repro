@@ -1,0 +1,12 @@
+{
+  "name": "Dependabot reproduction recipes",
+  "build": { "dockerfile": "Dockerfile", "context": ".." },
+  "remoteUser": "root",
+  "hostRequirements": { "cpus": 2, "memory": "8gb", "storage": "32gb" },
+  "postCreateCommand": "python3 repro.py list",
+  "customizations": {
+    "vscode": {
+      "settings": { "remote.autoForwardPorts": false }
+    }
+  }
+}

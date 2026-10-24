@@ -1,0 +1,5 @@
+{
+  "recipe": "terraform-private-registry-module-case",
+  "issue": "https://github.com/dependabot/dependabot-core/issues/EXAMPLE",
+  "note": "Synthetic sparse-input example, not a real issue assessment."
+}

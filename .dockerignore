@@ -1,0 +1,8 @@
+**
+!repro.py
+!recipes/
+!recipes/**
+!examples/
+!examples/**
+!tests/
+!tests/**

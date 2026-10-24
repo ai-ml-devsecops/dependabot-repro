@@ -1,0 +1,17 @@
+{
+  "id": "terraform-private-registry-module-case",
+  "title": "Terraform private registry: module identifier case",
+  "issues": ["https://github.com/dependabot/dependabot-core/issues/16622"],
+  "dependabot_sha": "0616924ebbae8be6ba77ef1565950d88efb5f6a8",
+  "scope": "synthetic",
+  "assumptions": [
+    "The synthetic HTTPS registry implements the responses reported in issue 16622.",
+    "Localhost and a fixture token replace the reporter's hostname and credential.",
+    "Versions 1.0.0 and 1.1.0 are chosen fixture data."
+  ],
+  "limitations": [
+    "Does not verify a real boring-registry deployment, OpenTofu, or GitHub's hosted service.",
+    "Exercises the real Terraform parser, registry client, and latest-version check.",
+    "Ruby image tag and apt packages are not pinned to digests or snapshots."
+  ]
+}
