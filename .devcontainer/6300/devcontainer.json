@@ -1,0 +1,6 @@
+{
+  "name": "Python #6300",
+  "build": { "dockerfile": "../../cases/pip/6300/Dockerfile", "context": "../.." },
+  "remoteUser": "root",
+  "hostRequirements": { "cpus": 2, "memory": "8gb", "storage": "32gb" }
+}

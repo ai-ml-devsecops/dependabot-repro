@@ -10,6 +10,7 @@ For Codespaces:
 
 - [Terraform #16622: uppercase private registry modules](cases/terraform/16622/README.md)
 - [uv #16589: dependencies ignored with build-only Poetry configuration](cases/uv/16589/README.md)
+- [Python #6300: version ordering and caret requirements](cases/pip/6300/README.md)
 - [pip-tools #3143: changing comment paths](cases/pip/3143/README.md)
 
 Results:
