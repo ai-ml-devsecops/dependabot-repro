@@ -28,7 +28,13 @@ def verdict(baseline, candidate):
 
 def execute(command, log):
     with log.open("w", encoding="utf-8") as stream:
-        return subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, check=False).returncode
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   text=True, bufsize=1)
+        assert process.stdout is not None
+        for line in process.stdout:
+            stream.write(line)
+            print(line, end="")
+        return process.wait()
 
 
 def compare(recipe, baseline, candidate, output, docker="docker", case=None):
@@ -46,7 +52,7 @@ def compare(recipe, baseline, candidate, output, docker="docker", case=None):
         folder = output / label
         folder.mkdir()
         image = "dependabot-repro:" + sha[:12]
-        build = [docker, "build", "--progress=plain", "-f", ".devcontainer/Dockerfile",
+        build = [docker, "build", "--progress=plain", "--network=host", "-f", ".devcontainer/Dockerfile",
                  "--build-arg", "DEPENDABOT_SHA=" + sha, "-t", image, "."]
         build_code = execute(build, folder / "build.log")
         if build_code:

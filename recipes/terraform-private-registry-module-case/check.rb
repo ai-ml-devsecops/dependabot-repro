@@ -10,7 +10,7 @@ Excon.defaults[:ssl_ca_file] = ENV.fetch("REPRO_CA")
 evidence = { stage: "parser" }
 begin
   credentials = [Dependabot::Credential.new(
-    "type" => "terraform_registry", "host" => "localhost:18443", "token" => "fixture-only"
+    "type" => "terraform_registry", "host" => "localhost", "token" => "fixture-only"
   )]
   files = [Dependabot::DependencyFile.new(name: "main.tf", content: File.read(ARGV.fetch(0)))]
   dependencies = Dependabot::Terraform::FileParser.new(
@@ -20,7 +20,7 @@ begin
 
   dependency = dependencies.first
   evidence[:dependency] = dependency.name
-  evidence[:module_identifier] = dependency.source_string("module_identifier")
+  evidence[:module_identifier] = dependency.source_details.fetch(:module_identifier)
 
   # Check the same Ruby HTTPS client before attributing any error to Dependabot.
   evidence[:stage] = "ruby_https_control"

@@ -1,5 +1,7 @@
 import copy
+import os
 import unittest
+from unittest.mock import patch
 import repro
 
 
@@ -62,6 +64,12 @@ class RecipeTests(unittest.TestCase):
                    "status": 200, "body": self.case["registry_upper_response"]["body"]}
         self.assertEqual(repro.classify(evidence, [request], 0, "acme/RDS/aws"), "not_reproduced")
         self.assertEqual(repro.classify(evidence, [], 0, "acme/RDS/aws"), "blocked")
+
+    def test_image_sha_overrides_the_recipe_pin_for_a_revision_comparison(self):
+        with patch.dict(os.environ, {"DEPENDABOT_SHA": "a" * 40}):
+            self.assertEqual(repro.expected_revision({"dependabot_sha": "b" * 40}), "a" * 40)
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(repro.expected_revision({"dependabot_sha": "b" * 40}), "b" * 40)
 
 
 if __name__ == "__main__":

@@ -19,4 +19,4 @@ COPY recipes /opt/dependabot-repro/recipes
 COPY examples /opt/dependabot-repro/examples
 COPY tests /opt/dependabot-repro/tests
 WORKDIR /opt/dependabot-repro
-CMD ["python3", "repro.py", "run", "terraform-private-registry-module-case"]
+CMD ["python3", "repro.py"]

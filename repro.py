@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent
+REGISTRY_PORT = 443
 EXIT = {"ready": 0, "reproduced": 0, "not_reproduced": 0,
         "blocked": 2, "needs_info": 3, "unsupported": 4}
 QUESTIONS = {
@@ -30,6 +31,20 @@ def read_json(path):
 
 def write_json(path, value):
     Path(path).write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def expected_revision(spec):
+    return os.environ.get("DEPENDABOT_SHA", spec["dependabot_sha"])
+
+
+def run_logged(command, log, **kwargs):
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               text=True, bufsize=1, **kwargs)
+    assert process.stdout is not None
+    for line in process.stdout:
+        log.write(line)
+        print(line, end="")
+    return process.wait()
 
 
 def catalog():
@@ -160,11 +175,12 @@ def run(recipe_id, output, case_path=None):
     try:
         upstream = Path(os.environ.get("DEPENDABOT_CORE", "/opt/dependabot-core"))
         revision = subprocess.check_output(["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True).strip()
-        if revision != spec["dependabot_sha"]:
-            raise RuntimeError("Dependabot checkout does not match the recipe's pinned revision.")
+        if revision != expected_revision(spec):
+            raise RuntimeError("Dependabot checkout does not match the expected revision.")
         if subprocess.check_output(["git", "-C", str(upstream), "status", "--porcelain", "--untracked-files=no"], text=True).strip():
             raise RuntimeError("Tracked upstream source has modifications.")
         subprocess.run(["bundle", "check"], check=True, capture_output=True, text=True)
+        result["dependabot_sha"] = revision
         result["ruby"] = subprocess.check_output(["ruby", "--version"], text=True).strip()
         identifier = validation["module_identifier"]
         upper = "/v1/modules/" + identifier + "/versions"
@@ -204,6 +220,8 @@ def run(recipe_id, output, case_path=None):
                         response = {"status": 401, "body": {"error": "fixture token required"}}
                     requests.append({"path": self.path, **response,
                                      "phase": self.headers.get("X-Repro-Phase", "dependabot")})
+                    print("[registry] " + requests[-1]["phase"] + " " + self.path +
+                          " -> " + str(response["status"]), flush=True)
                     data = json.dumps(response["body"]).encode()
                     self.send_response(response["status"])
                     self.send_header("Content-Type", "application/json")
@@ -236,14 +254,14 @@ def run(recipe_id, output, case_path=None):
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.minimum_version = ssl.TLSVersion.TLSv1_2
             context.load_cert_chain(cert, key)
-            server = RegistryServer(("127.0.0.1", 18443), Registry)
+            server = RegistryServer(("127.0.0.1", REGISTRY_PORT), Registry)
             threading.Thread(target=server.serve_forever, daemon=True).start()
             client = ssl.create_default_context(cafile=str(ca))
             opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),
                                                 urllib.request.HTTPSHandler(context=client))
             controls = []
             for path, expected in routes.items():
-                request = urllib.request.Request("https://localhost:18443" + path,
+                request = urllib.request.Request("https://localhost" + path,
                     headers={"Authorization": "Bearer fixture-only", "X-Repro-Phase": "fixture-check"})
                 try:
                     response = opener.open(request, timeout=10)
@@ -255,21 +273,21 @@ def run(recipe_id, output, case_path=None):
                     raise RuntimeError("Fixture control failed for " + path)
                 controls.append({"path": path, **actual})
             write_json(output / "fixture-checks.json", controls)
-            manifest = case["manifest"].replace(validation["source"], "localhost:18443/" + identifier)
+            manifest = case["manifest"].replace(validation["source"], "localhost/" + identifier)
             (output / "main.tf").write_text(manifest, encoding="utf-8")
             result["manifest_sha256"] = hashlib.sha256(manifest.encode()).hexdigest()
             env = {k: v for k, v in os.environ.items()
                    if k.lower() not in {"http_proxy", "https_proxy", "all_proxy"}}
             env.update(REPRO_CA=str(ca), SSL_CERT_FILE=str(ca), NO_PROXY="localhost,127.0.0.1",
-                       REPRO_UPPER_URL="https://localhost:18443" + upper)
+                       REPRO_UPPER_URL="https://localhost" + upper)
             command = ["bundle", "exec", "ruby", str(ROOT / "recipes" / recipe_id / "check.rb"),
                        str(output / "main.tf"), str(output / "checker.json")]
             result["command"] = command
             with (output / "run.log").open("w", encoding="utf-8") as log:
-                process = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=120)
+                returncode = run_logged(command, log, env=env)
             evidence = read_json(output / "checker.json")
-            result.update(exit_code=process.returncode, evidence=evidence,
-                          status=classify(evidence, requests, process.returncode, identifier))
+            result.update(exit_code=returncode, evidence=evidence,
+                          status=classify(evidence, requests, returncode, identifier))
             if result["status"] == "blocked":
                 error = evidence.get("exception", {})
                 result["reason"] = str(error.get("cause") or error or "Expected evidence was not produced.")
