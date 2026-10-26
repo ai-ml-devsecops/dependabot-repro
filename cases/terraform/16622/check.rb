@@ -9,7 +9,7 @@ begin
   credentials = [Dependabot::Credential.new("type" => "terraform_registry", "host" => "localhost", "token" => "fixture-only")]
   files = [Dependabot::DependencyFile.new(name: "main.tf", content: File.read(ARGV.fetch(0)))]
   dependency = Dependabot::Terraform::FileParser.new(dependency_files: files, source: nil, credentials: credentials).parse.fetch(0)
-  evidence[:module_identifier] = dependency.source_details["module_identifier"]
+  evidence[:module_identifier] = dependency.source_details[:module_identifier]
   evidence[:stage] = "ruby_https_control"
   control = Excon.get(ENV.fetch("REPRO_UPPER_URL"), headers: { "Authorization" => "Bearer fixture-only", "X-Repro-Phase" => "ruby-control" })
   evidence[:control] = { status: control.status, body: JSON.parse(control.body) }

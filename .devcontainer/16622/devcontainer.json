@@ -1,0 +1,9 @@
+{
+  "name": "Terraform #16622",
+  "build": {
+    "dockerfile": "../../cases/terraform/16622/Dockerfile",
+    "context": "../.."
+  },
+  "remoteUser": "root",
+  "hostRequirements": { "cpus": 2, "memory": "8gb", "storage": "32gb" }
+}
