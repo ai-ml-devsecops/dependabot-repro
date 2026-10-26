@@ -37,16 +37,6 @@ def expected_revision(spec):
     return os.environ.get("DEPENDABOT_SHA", spec["dependabot_sha"])
 
 
-def run_logged(command, log, **kwargs):
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               text=True, bufsize=1, **kwargs)
-    assert process.stdout is not None
-    for line in process.stdout:
-        log.write(line)
-        print(line, end="")
-    return process.wait()
-
-
 def catalog():
     return {spec["id"]: spec for spec in
             (read_json(path) for path in sorted((ROOT / "recipes").glob("*/recipe.json")))}
@@ -220,8 +210,6 @@ def run(recipe_id, output, case_path=None):
                         response = {"status": 401, "body": {"error": "fixture token required"}}
                     requests.append({"path": self.path, **response,
                                      "phase": self.headers.get("X-Repro-Phase", "dependabot")})
-                    print("[registry] " + requests[-1]["phase"] + " " + self.path +
-                          " -> " + str(response["status"]), flush=True)
                     data = json.dumps(response["body"]).encode()
                     self.send_response(response["status"])
                     self.send_header("Content-Type", "application/json")
@@ -284,10 +272,10 @@ def run(recipe_id, output, case_path=None):
                        str(output / "main.tf"), str(output / "checker.json")]
             result["command"] = command
             with (output / "run.log").open("w", encoding="utf-8") as log:
-                returncode = run_logged(command, log, env=env)
+                process = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=120)
             evidence = read_json(output / "checker.json")
-            result.update(exit_code=returncode, evidence=evidence,
-                          status=classify(evidence, requests, returncode, identifier))
+            result.update(exit_code=process.returncode, evidence=evidence,
+                          status=classify(evidence, requests, process.returncode, identifier))
             if result["status"] == "blocked":
                 error = evidence.get("exception", {})
                 result["reason"] = str(error.get("cause") or error or "Expected evidence was not produced.")

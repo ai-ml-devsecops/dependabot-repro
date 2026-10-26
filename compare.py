@@ -28,13 +28,7 @@ def verdict(baseline, candidate):
 
 def execute(command, log):
     with log.open("w", encoding="utf-8") as stream:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   text=True, bufsize=1)
-        assert process.stdout is not None
-        for line in process.stdout:
-            stream.write(line)
-            print(line, end="")
-        return process.wait()
+        return subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, check=False).returncode
 
 
 def compare(recipe, baseline, candidate, output, docker="docker", case=None):
