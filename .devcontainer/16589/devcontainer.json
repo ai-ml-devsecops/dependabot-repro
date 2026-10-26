@@ -1,0 +1,9 @@
+{
+  "name": "uv #16589",
+  "build": {
+    "dockerfile": "../../cases/uv/16589/Dockerfile",
+    "context": "../.."
+  },
+  "remoteUser": "root",
+  "hostRequirements": { "cpus": 2, "memory": "8gb", "storage": "32gb" }
+}
