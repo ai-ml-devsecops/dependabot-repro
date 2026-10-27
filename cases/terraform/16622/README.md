@@ -12,6 +12,9 @@ cat result/requests.json
 
 Expected result: `"status": "reproduced"`.
 
+For actual boring-registry and a full Core dry run in the VMware VM, follow
+[the real-registry instructions](real-registry/README.md).
+
 For another run, use a new output folder, such as `--output result-2`. Delete output folders when you no longer need them. If the result is `blocked`, check `result/run.log` and `result/checker.json` (if present).
 
 ## Optional: compare before and after #14434
