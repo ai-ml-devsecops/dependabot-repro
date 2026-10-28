@@ -1,0 +1,12 @@
+{
+  "name": "Terraform #16622: real registry + full dry run",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "../.."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "remoteUser": "vscode",
+  "hostRequirements": { "cpus": 2, "memory": "8gb", "storage": "32gb" }
+}
